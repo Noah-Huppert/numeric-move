@@ -62,7 +62,7 @@ between each prefix using the `--diff,-d` option:
 001-foo
 010-bazz
 020-bar
-# nmv 001 010 -d 10
+# nmv -d 10 001 010
 # ls
 010-foo
 020-bazz
@@ -81,7 +81,7 @@ used to force the tool to add additional digits to all files numeric prefixes.
 001-foo
 002-bazz
 003-bar
-# nmv 001 1000 -r
+# nmv -r 001 1000
 # ls
 1000-foo
 1001-bazz
@@ -97,7 +97,7 @@ prefixes to exist:
 001-foo
 002-bazz
 003-bar
-# nmv 001 002 -s
+# nmv -s 001 002
 # ls
 002-bazz
 002-foo
