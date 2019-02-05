@@ -14,7 +14,7 @@
  *               to argument
  * @param same If files with the same numeric prefix can exist at the same time
  */
-void numeric_move(selector *from, selector *to, int diff,
+void numeric_move(Selector *from, Selector *to, int diff,
 		bool resize, bool same);
 
 #endif

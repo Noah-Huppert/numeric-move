@@ -19,6 +19,6 @@ typedef struct {
 	 * Numeric prefix
 	 */
 	int prefix;
-} selector;
+} Selector;
 
 #endif
