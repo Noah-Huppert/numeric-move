@@ -17,6 +17,7 @@ int main(int argc, char *argv[]) {
 	// {{{2 Variables to hold arguments
 	int diff = 1;
 	bool resize = false;
+	bool same = false;
 	Selector *from = NULL;
 	Selector *to = NULL;
 
@@ -24,6 +25,7 @@ int main(int argc, char *argv[]) {
 	struct option long_options[] = {
 		{ "diff", 1, &diff, 0 },
 		{ "resize", 0, 0, 0 },
+		{ "same", 0, 0, 0 },
 		{ "help", 0, 0, 0 },
 		{ 0, 0, 0, 0 },
 	};
@@ -36,7 +38,7 @@ int main(int argc, char *argv[]) {
 	int num_opts = 0;
 
 	while (opt_c != (char)-1) {
-		opt_c = (char) getopt_long(argc, argv, "+d:rh", long_options, 
+		opt_c = (char) getopt_long(argc, argv, "+d:rsh", long_options, 
 				NULL);
 
 		switch (opt_c) {
@@ -53,6 +55,12 @@ int main(int argc, char *argv[]) {
 			// Resize argument
 			case 'r':
 				resize = true;
+				num_opts += 1;
+				break;
+
+			// Same argument
+			case 's':
+				same = true;
 				num_opts += 1;
 				break;
 		}
@@ -81,7 +89,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	// {{{1 Call move function
-	// numeric_move(from, to, diff, resize);
+	numeric_move(from, to, diff, resize, same);
 
 	// {{{1 Cleanup
 	selector_free(from);
