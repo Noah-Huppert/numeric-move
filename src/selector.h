@@ -21,4 +21,14 @@ typedef struct {
 	int prefix;
 } Selector;
 
+/**
+ * Create selector from selector string
+ */
+Selector* selector_init(char *sstr);
+
+/**
+ * Free selector
+ */
+void selector_free(Selector *s);
+
 #endif
