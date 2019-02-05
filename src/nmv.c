@@ -4,6 +4,8 @@
 #include <getopt.h>
 
 #include "help.h"
+#include "selector.h"
+#include "move.h"
 
 int main(int argc, char *argv[]) {
 	// {{{1 Parse arguments
@@ -15,8 +17,8 @@ int main(int argc, char *argv[]) {
 	// {{{2 Variables to hold arguments
 	int diff = 1;
 	bool resize = false;
-	int from;
-	int to;
+	Selector *from = NULL;
+	Selector *to = NULL;
 
 	// {{{2 Setup getopt
 	struct option long_options[] = {
@@ -57,33 +59,33 @@ int main(int argc, char *argv[]) {
 	}
 
 	// {{{2 Parse positional arguments
-	int pos_arg_i = 0;
+	int num_pos_args = argc-(num_opts+1);
+
+	if (num_pos_args < 2) {
+		fprintf(stderr, "FROM and TO arguments must be provided\n");
+		print_help();
+	}
+
 	for (int i = num_opts+1; i < argc; i++) {
-		pos_arg_i++;
-
-		switch (pos_arg_i) {
-			// FROM argument
+		switch (i) {
+			// FROM
 			case 1:
-				from = atoi(argv[i]);
+				from = selector_init(argv[i]);
 				break;
 
-			// TO argument
+			// TO
 			case 2:
-				to = atoi(argv[i]);
-				break;
-
-			default:
-				fprintf(stderr, "Only takes 2 positional "
-						"arguments\n");
-				print_help();
+				to = selector_init(argv[i]);
 				break;
 		}
 	}
 
-	if (pos_arg_i < 2) {
-		fprintf(stderr, "FROM TO position arguments must be provided\n");
-		print_help();
-	}
+	// {{{1 Call move function
+	// numeric_move(from, to, diff, resize);
+
+	// {{{1 Cleanup
+	selector_free(from);
+	selector_free(to);
 
 	return 0;
 }
