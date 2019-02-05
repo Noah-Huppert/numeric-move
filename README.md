@@ -70,9 +70,9 @@ between each prefix using the `--diff,-d` option:
 ```
 
 ## Resize Move
-If `TO` the numeric prefix cannot be expressed in the number of digits which 
-files currently have the tool will fail. The `--resize,-r` option can be used 
-to force the tool to add additional digits to all files numeric prefixes.
+If the `TO` the numeric prefix cannot be expressed in the number of digits 
+which files currently have the tool will fail. The `--resize,-r` option can be 
+used to force the tool to add additional digits to all files numeric prefixes.
 
 ```
 # ls
