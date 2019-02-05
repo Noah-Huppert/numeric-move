@@ -88,6 +88,22 @@ used to force the tool to add additional digits to all files numeric prefixes.
 1002-bar
 ```
 
+## Same Move
+The `--same,-s` option can be used to allow files with overlapping numeric 
+prefixes to exist:
+
+```
+# ls
+001-foo
+002-bazz
+003-bar
+# nmv 001 002 -s
+# ls
+002-bazz
+002-foo
+003-bar
+```
+
 # Build
 Build with Make:
 
