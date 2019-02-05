@@ -29,7 +29,7 @@ The tool takes the current numeric prefix and the new numeric prefix
 as arguments:
 
 ```
-# nmv FROM TO
+# nmv [OPTIONS] FROM TO
 ```
 
 The tool will rename all files with this prefix with a new prefix.  
