@@ -69,6 +69,8 @@ between each prefix using the `--diff,-d` option:
 030-bar
 ```
 
+By default this option is set to 1.
+
 ## Resize Move
 If the `TO` the numeric prefix cannot be expressed in the number of digits 
 which files currently have the tool will fail. The `--resize,-r` option can be 
