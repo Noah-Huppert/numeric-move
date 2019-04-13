@@ -1,154 +1,154 @@
 package main
 
 import (
-	"fmt"
 	"os"
-	"strconv"
+	"fmt"
 	"path"
-	"path/filepath"
 	"regexp"
+	"path/filepath"
+	"strconv"
 	"sort"
 
 	"github.com/Noah-Huppert/golog"
 )
 
+// numPrefixFileExp is a regular expression which matches against a numerically prefixed file
+var numPrefixFileExp *regexp.Regexp = regexp.MustCompile("^([0-9]+)(.*)$")
 
-// numericPrefixExp matches a file name with a numeric prefix
-var numericPrefixExp *regexp.Regexp = regexp.MustCompile("^([0-9]+)(.*)$")
-
-// Selector indicates the directory of a file and its numeric prefix
-type Selector struct {
-	// Directory in which file is located
+// NumPrefixFile holds information about a numerically prefixed file
+type NumPrefixFile struct {
+	// Directory of file
 	Directory string
 
-	// NonNumericFileName is the name of the file without the numeric prefix
-	NonNumericFileName string
+	// UnPrefixedFileName is the file's name without the numerical prefix
+	UnPrefixedFileName string
 
-	// PrefixLength length of numerical prefix
-	PrefixLength uint32
+	// NumPrefix is the file's numerical prefix
+	NumPrefix uint64
 
-	// PrefixNumber number in numerical prefix
-	PrefixNumber uint64
-}
+	// PrefixLength is the number of digits used to display a numerical prefix
+	PrefixLength uint64
+}	
 
-// NewSelector creates a new select from a string
-func NewSelector(s string) (Selector, error) {
-	sel := Selector{}
-	
+// NewNumPrefixFile creates a new NumPrefixFile from a path
+func NewNumPrefixFile(s string) (*NumPrefixFile, error) {
+	// Check if s is a path to a numerically prefixed file	
 	fName := path.Base(s)
-
-	matches := numericPrefixExp.FindStringSubmatch(fName)
-
+	matches := numPrefixFileExp.FindStringSubmatch(fName)
+	
 	if len(matches) == 0 {
-		return sel, fmt.Errorf("not in numeric prefix format")
+		return nil, fmt.Errorf("path is not a numerically prefixed file")
 	}
-	
-	prefixNumber, err := strconv.ParseUint(matches[1], 10, 64)
+
+	// Resolve to absolute path
+	absPath, err := filepath.Abs(s)
 	if err != nil {
-		return sel, fmt.Errorf("error parsing numeric prefix string into int64: %s", err.Error())
-	}	
-
-	sel.Directory = path.Dir(s)
-	sel.NonNumericFileName = matches[2]
-	sel.PrefixLength = uint32(len(matches[1]))
-	sel.PrefixNumber = prefixNumber
-
-	return sel, nil
-}
-
-// FileName returns the name of a file described by a selector.
-// The function will return a suggested selector PrefixLength if the selector's PrefixLength is too small to hold the PrefixNumber.
-// If the selector's PrefixLength is adequate 0 will be returned.
-func (s Selector) FileName(resizePrefix bool) (string, uint32) {
-	out := ""
-	
-	numStr := string(s.PrefixNumber)
-
-	newPrefixLength := 0
-
-	if len(numStr) > s.PrefixLength {
-		newPrefixLength = len(numStr)
+		return nil, fmt.Errorf("failed to resolve absolute path: %s", err.Error())
 	}
 
-	for len(out) - len(numStr) < s.PrefixLength {
-		out += "0"
+	// Parse numerical prefix
+	num, err := strconv.ParseUint(matches[1], 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse numeric prefix: %s", err.Error())
 	}
 
-	out += numStr
-
-	out += s.NonNumericFileName
-
-	return out, newPrefixLength
+	return &NumPrefixFile{
+		Directory: path.Dir(absPath),
+		UnPrefixedFileName: matches[2],
+		NumPrefix: num,
+		PrefixLength: uint64(len(matches[1])),
+	}, nil
 }
 
-func printUsage(progName string) {
-	fmt.Printf("%s - Numeric move\n", progName)
-	fmt.Printf("\n")
-	fmt.Printf("Usage: %s FROM TO\n", progName)
-	fmt.Printf("\n")
-	fmt.Printf("Arguments:\n")
-	fmt.Printf("    FROM    Numeric prefix of file to move\n")
-	fmt.Printf("    TO      New numeric prefix\n")
+// Resize returns a new PrefixLength if the current one will not fit NumPrefix.
+// Otherwise 0 is returned.
+func (f NumPrefixFile) Resize() uint64 {
+	l := uint64(len(string(f.NumPrefix)))
+
+	if l > f.PrefixLength {
+		return l
+	}
+
+	return 0
+}
+
+// FileName returns the prefixed name of a file. Assumes PrefixLength can fit NumPrefix.
+func (f NumPrefixFile) FileName() string {
+	s := ""
+	numStr := string(f.NumPrefix)
+
+	for uint64(len(s) + len(numStr)) < f.PrefixLength {
+		s += "0"
+	}
+
+	return s + numStr
+}
+
+// Path is the file's full path. Assumes PrefixLength can fit NumPrefix.
+func (f NumPrefixFile) Path() string {
+	return filepath.Join(f.Directory, f.FileName())
 }
 
 func main() {
 	// {{{1 Setup logger
 	logger := golog.NewStdLogger("nmv")
-	
-	// {{{1 Get command line arguments
+
+	// {{{1 Get arguments
 	if len(os.Args[1:]) != 2 {
-		printUsage(os.Args[0])
-		logger.Fatalf("2 arguments required")
+		fmt.Printf("%s - Numeric move\n\n", os.Args[0])
+		fmt.Printf("Usage: %s TARGET NEW_PREFIX\n\n", os.Args[0])
+		fmt.Println("Arguments:")
+		fmt.Println("    TARGET        Path of file to move")
+		fmt.Println("    NEW_PREFIX    New numerical prefix")
 	}
 
-	from, err := NewSelector(os.Args[1])
+	target, err := NewNumPrefixFile(os.Args[1])
 	if err != nil {
-		logger.Fatalf("failed to parse FROM argument: %s", err.Error())
+		logger.Fatalf("failed to parse target argument: %s", err.Error())
 	}
 
-	to, err := NewSelector(os.Args[2])
+	newPrefix, err := strconv.ParseUint(os.Args[2], 10, 64)
 	if err != nil {
-		logger.Fatalf("failed to parse TO argument: %s", err.Error())
+		logger.Fatalf("failed to parse new prefix argument: %s", err.Error())
 	}
+	logger.Debugf("newPrefix: %d", newPrefix)
 
-	// {{{1 Model files in TO directory
-	fromFileName, _ := from.FileName()
-	
-	toDirSelectors := []Selector{}
+	// {{{1 Model target directory files
+	files := []*NumPrefixFile{}
 
-	err = filepath.Walk(to.Directory, func(wPath string, info os.FileInfo, err error) error {
-		if info.IsDir() && wPath != to.Directory {
+	err = filepath.Walk(target.Directory, func(wPath string, info os.FileInfo, err error) error {
+		if info.IsDir() && wPath != target.Directory {
 			return filepath.SkipDir
 		}
 
 		fileName := path.Base(wPath)
 
-		if ! numericPrefixExp.Match([]byte(fileName)) {
+		if ! numPrefixFileExp.Match([]byte(fileName)) {
 			return nil
 		}
 
-		selector, err := NewSelector(wPath)
+		f, err := NewNumPrefixFile(wPath)
 		if err != nil {
-			return fmt.Errorf("failed to parse file into Selector: %s", err.Error())
+			return fmt.Errorf("failed to parse file into num prefix file: %s", err.Error())
 		}
 
-		toDirSelectors = append(toDirSelectors, selector)
+		files = append(files, f)
 
 		return nil
 	})
+
 	if err != nil {
-		logger.Fatalf("failed to walk directory in TO argument: %s", err.Error())
+		logger.Fatalf("failed to walk target directory: %s", err.Error())
 	}
 
-	sort.SliceStable(toDirSelectors, func(i, j int) bool {
-	    return toDirSelectors[i].PrefixNumber < toDirSelectors[j].PrefixNumber
+	sort.SliceStable(files, func(i, j int) bool {
+	    return files[i].NumPrefix < files[j].NumPrefix
 	})
 
-	// {{{1 Determine files which we must rename in TO directory
-	// {{{2 If resize
-	if from.PrefixLength != to.PrefixLength {
-		for i, _ := range toDirSelectors
+	for _, f := range files {
+		logger.Debugf("%#v", f)
 	}
 
-	logger.Debugf("%#v", toDirSelectors)
+	// {{{1 Augment files for new target
+	// TODO: Something with a double loop
 }
