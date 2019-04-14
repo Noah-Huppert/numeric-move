@@ -49,6 +49,3 @@ func (n *NumPrefixFileNode) InsertAfter(i *NumPrefixFileNode) {
 		n.Next = i
 	}
 }
-
-	}
-}
