@@ -50,20 +50,5 @@ func (n *NumPrefixFileNode) InsertAfter(i *NumPrefixFileNode) {
 	}
 }
 
-// InsertBefore adds a NumPrefixFileNode before the current
-func (n *NumPrefixFileNode) InsertBefore(i *NumPrefixFileNode) {
-	// If we are adding to the beginning of the list
-	if n.Prev == nil {
-		// from: n <-> x
-		// to  : i <-> n <-> x
-		i.Next = n
-		n.Prev = i
-	} else { // If inserting in the middle
-		// from: x <-> n
-		// to  : x <-> i <-> n
-		i.Prev = n.Prev
-		i.Prev.Next = i
-		n.Prev = i
-		i.Next = n
 	}
 }

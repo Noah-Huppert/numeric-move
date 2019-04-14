@@ -78,23 +78,3 @@ func TestInsertAfterTail(t *testing.T) {
 
 	assertLinkedEqual(t, []string{"a", "b", "c", "i"}, head)
 }
-
-// TestInsertBeforeHead tests inserting a node before the head of a list
-func TestInsertBeforeHead(t *testing.T) {
-	head := buildTestList()
-
-	head.InsertBefore(buildInsertNode())
-
-	assert.NotNil(t, head.Prev)
-
-	assertLinkedEqual(t, []string{"i", "a", "b", "c"}, head.Prev)
-}
-
-// TestInsertBeforeMiddle tests inserting a node before the middle of a list
-func TestInsertBeforeMiddle(t *testing.T) {
-	head := buildTestList()
-
-	head.Next.InsertBefore(buildInsertNode())
-
-	assertLinkedEqual(t, []string{"a", "i", "b", "c"}, head)
-}
