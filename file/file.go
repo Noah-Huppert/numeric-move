@@ -61,13 +61,13 @@ func NewNumPrefixFile(s string) (*NumPrefixFile, error) {
 // FileName returns the prefixed name of a file. Assumes PrefixLength can fit NumPrefix.
 func (f NumPrefixFile) FileName() string {
 	s := ""
-	numStr := string(f.NumPrefix)
+	numStr := strconv.FormatUint(f.NumPrefix, 10)
 
 	for uint64(len(s)+len(numStr)) < f.PrefixLength {
 		s += "0"
 	}
 
-	return s + numStr
+	return s + numStr + f.UnPrefixedName
 }
 
 // Path is the file's full path. Assumes PrefixLength can fit NumPrefix.
