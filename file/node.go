@@ -1,5 +1,9 @@
 package file
 
+import (
+	"fmt"
+)
+
 // NumPrefixFileNode is a node in a linked list which represents all numerically prefixed files in a directory
 // Representing these files as a linked list allows for easier shifting of prefixes.
 // Some nodes represent actual files. Some represent spaces in the prefix numbers.
@@ -48,4 +52,64 @@ func (n *NumPrefixFileNode) InsertAfter(i *NumPrefixFileNode) {
 		i.Prev = n
 		n.Next = i
 	}
+}
+
+// String returns a string representation of a node
+func (n NumPrefixFileNode) String() string {
+	if n.Type == NodeTypeFile {
+		return fmt.Sprintf("file: %s", n.FileUnPrefixedName)
+	} else {
+		return fmt.Sprintf("space: %d", n.SpaceAmount)
+	}
+}
+
+// BuildList builds a linked list of NumPrefixFileNodes from an array of NumPrefixFiles
+func BuildList(a []*NumPrefixFile) (*NumPrefixFileNode, error) {
+	// Check not empty
+	if len(a) == 0 {
+		return nil, fmt.Errorf("array empty")
+	}
+
+	// Add first node
+	var head *NumPrefixFileNode
+
+	fileNode := &NumPrefixFileNode{
+	    Type: NodeTypeFile,
+	    FileUnPrefixedName: a[0].UnPrefixedName,
+	}
+	
+	if a[0].NumPrefix == 0 {
+		head = fileNode
+	} else {
+		head = &NumPrefixFileNode{
+			Type: NodeTypeSpace,
+			SpaceAmount: a[0].NumPrefix - 1,
+			Next: fileNode,
+		}
+		fileNode.Prev = head
+	}
+
+	currentF := a[0]
+	current := fileNode
+
+	for _, f := range a[1:] {
+		if f.NumPrefix - 1 != currentF.NumPrefix {
+			current.InsertAfter(&NumPrefixFileNode{
+				Type: NodeTypeSpace,
+				SpaceAmount: (f.NumPrefix - currentF.NumPrefix) - 1,
+			})
+
+			current = current.Next
+		}
+
+		current.InsertAfter(&NumPrefixFileNode{
+			Type: NodeTypeFile,
+			FileUnPrefixedName: f.UnPrefixedName,
+		})
+
+		current = current.Next
+		currentF = f
+	}
+
+	return head, nil
 }

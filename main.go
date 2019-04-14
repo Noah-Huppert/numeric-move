@@ -45,22 +45,22 @@ func main() {
 	}
 
 	// {{{2 Build linked list
-	/*filesHead := &file.NumPrefixFileNode{
-		Type:               file.NodeTypeFile,
-		FileUnPrefixedName: files[0].UnPrefixedName,
-		Next:               nil,
-		Prev:               nil,
+	filesHead, err := file.BuildList(files)
+	if err != nil {
+		logger.Fatalf("failed to make a linked list of target directory: %s", err.Error())
 	}
-*/
 
-	//currentNode := filesHead
-	lastPrefix := files[0].NumPrefix
+	fileI := 0
+	current := filesHead
 
-	for _, file := range files[1:] {
-		// Check if there is a space between this file and the last file
-		if file.NumPrefix-lastPrefix > 0 {
-			// Add spacer node
-
+	for current != nil {
+		if current.Type == file.NodeTypeFile {
+			logger.Debugf("%s - %s", current.String(), files[fileI].FileName())
+			fileI++
+		} else {
+		    logger.Debugf("%s", current.String())
 		}
+
+		current = current.Next
 	}
 }
