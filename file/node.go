@@ -82,5 +82,18 @@ func (n *NumPrefixFileNode) InsertAfter(i *NumPrefixFileNode) {
 	}
 }
 
+// BuildFromArray creates a linked list from an array of NumPrefixFile-s
+/*
+func BuildFromArray(a []*NumPrefixFile) (*NumPrefixFileNode, error) {
+	if len(a) == 0 {
+		return nil, fmt.Errorf("array cannot be empty")
+	}
+
+	var head *NumPrefixFileNode = nil
+
+	for _, f := range a {
+		if head == nil {
+		}
 	}
 }
+*/
