@@ -32,47 +32,15 @@ const (
 	NodeTypeSpace NumPrefixFileNodeType = 1
 )
 
-// InsertAfter adds a NumPrefixFileNode after the current.
-// If inserting near a spacer node it will decrease the size of this node by 1 if possible
+// InsertAfter adds a NumPrefixFileNode after the current
 func (n *NumPrefixFileNode) InsertAfter(i *NumPrefixFileNode) {
 	// If we are adding on to the end of the list
 	if n.Next == nil {
-		// Collapse space if possible
-		if n.Prev != nil && n.Prev.Type == NodeTypeSpace {
-			s := n.Prev
-
-			if s.SpaceAmount > 1 {
-				s.SpaceAmount--
-			}
-		}
-
 		// from: x <-> n
 		// to  : x <-> n <-> i
 		n.Next = i
 		i.Prev = n
-
 	} else { // If inserting in the middle
-		// Collapse space if possible
-		// Favore space before the node
-		collapsed := false
-
-		if n.Prev != nil && n.Prev.Type == NodeTypeSpace {
-			s := n.Prev
-
-			if s.SpaceAmount > 1 {
-				s.SpaceAmount--
-				collapsed = true
-			}
-		}
-
-		if ! collapsed && n.Next.Type == NodeTypeSpace {
-			s := n.Next
-
-			if s.SpaceAmount > 1 {
-				s.SpaceAmount--
-			}
-		}
-		
 		// from: n <-> x
 		// to  : n <-> i <-> x
 		n.Next.Prev = i
