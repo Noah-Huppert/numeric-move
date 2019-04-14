@@ -110,3 +110,33 @@ func LoadDirectory(dir string) ([]*NumPrefixFile, error) {
 
 	return files, nil
 }
+
+// BuildArray builds an array of NumPrefixFiles from a linked list of NumPrefixFileNodes
+func BuildArray(dir string, length uint64, head *NumPrefixFileNode) ([]*NumPrefixFile, error) {
+	if head == nil {
+		return nil, fmt.Errorf("empty linked list")
+	}
+
+	a := []*NumPrefixFile{}
+
+	nextNum := uint64(0)
+	current := head
+
+	for current != nil {
+		if current.Type == NodeTypeSpace {
+			nextNum += current.SpaceAmount
+		} else {
+			a = append(a, &NumPrefixFile{
+				Directory: dir,
+				UnPrefixedName: current.FileUnPrefixedName,
+				NumPrefix: nextNum,
+				PrefixLength: length,
+			})
+			nextNum++
+		}
+
+		current = current.Next
+	}
+
+	return a, nil
+}

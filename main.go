@@ -63,4 +63,14 @@ func main() {
 
 		current = current.Next
 	}
+
+	// {{{2 Reassemble
+	reFiles, err := file.BuildArray(target.Directory, target.PrefixLength, filesHead)
+	if err != nil {
+		logger.Fatalf("failed to re-assemble linked list to array of target directory: %s", err.Error())
+	}
+		
+	for _, f := range reFiles {
+		logger.Debugf("%s", f.FileName())
+	}
 }
