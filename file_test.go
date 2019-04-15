@@ -29,3 +29,12 @@ func TestNewFileNodeErrs(t *testing.T) {
 
 	assert.Equal(t, err, ErrNotNumPrefixFile)
 }
+
+
+// TestFileNodeFullName ensures FileNode.FullName returns the correct value
+func TestFileNodeFullName(t *testing.T) {
+	f, err := NewFileNode(fullName)
+	assert.Nil(t, err)
+
+	assert.Equal(t, f.FullName(), fullName)
+}
