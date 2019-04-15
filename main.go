@@ -33,7 +33,7 @@ func main() {
 		fmt.Printf("%s - Numeric move\n\n", os.Args[0])
 		fmt.Printf("Usage: %s [-y] TARGET NEW_PREFIX\n\n", os.Args[0])
 		fmt.Println("Options:")
-		fmt.Println("    -y    Do not ask for confirmation\n")
+		fmt.Printf("    -y    Do not ask for confirmation\n\n")
 		fmt.Println("Arguments:")
 		fmt.Println("    TARGET        Path of file to move")
 		fmt.Println("    NEW_PREFIX    New numerical prefix")
