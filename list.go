@@ -21,6 +21,12 @@ type FileNode struct {
 	// Prefix is the file's numeric prefix
 	Prefix uint64
 
+	// PrevDelta is the difference between the previous node's prefix and Prefix.
+	// This field will start un-set. Once all files have been added to a FileList
+	// the FileList will traverse itself and set this field. This ensures that
+	// PrevDelta is accurate.
+	PrevDelta uint64
+
 	// Next FileNode in list
 	Next *FileNode
 
@@ -51,6 +57,7 @@ func NewFileNode(p string) (*FileNode, error) {
 	return &FileNode{
 		Name: matches[2],
 		Prefix: prefix,
+		PrevDelta: 0,
 	}, nil
 }
 
@@ -117,28 +124,33 @@ func (l *FileList) Insert(n *FileNode) {
 	n.Prev = current
 }
 
-// FilesFromSpaces creates a new files list from a spaces list
-func FilesFromSpaces(dir string, length uint64, head *SpaceNode) *FileList {
-	filesList := &FileList{
-		Directory: dir,
-		PrefixLength: length,
-	}
-
-	nextPrefix := uint64(0)
-	
-	for head = head; head != nil; head = head.Next {
-		// If space node
-		if head.IsSpace {
-			nextPrefix += head.Space
-		} else {
-			filesList.Insert(&FileNode{
-				Name: head.File,
-				Prefix: nextPrefix,
-			})
-
-			nextPrefix++
+// ComputeDeltas traverses the list and sets the FileNode.PrevDelta field based on the
+// nodes which are currently in the list.
+func (l *FileList) ComputeDeltas() {
+	for head := l.Head; head != nil; head = head.Next {
+		// If first node
+		if head.Prev == nil {
+			// PrevDelta is the difference between 0 and Prefix
+			if head.Prefix > 0 {
+				head.PrevDelta = head.Prefix - 1
+			}
+		} else { // If node in middle
+			if head.Prefix - head.Prev.Prefix > 0 {
+			    head.PrevDelta = head.Prefix - head.Prev.Prefix - 1
+			}
 		}
 	}
+}
 
-	return filesList
+// ComputePrefixes re-compute's FileNode.Prefix values using FileNode.Prev delta fields.
+// Existing FileNode.Prefix fields are ignored. Prefix values are computed based on the
+// space between nodes.
+func (l *FileList) ComputePrefixes() {
+	var nextPrefix uint64 = 0
+
+	for head := l.Head; head != nil; head = head.Next {
+		nextPrefix += head.PrevDelta
+		head.Prefix = nextPrefix
+		nextPrefix++
+	}
 }
