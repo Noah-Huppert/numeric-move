@@ -38,6 +38,7 @@ func main() {
 	logger.Debugf("%#v, %#v", target, newPrefix)
 
 	// {{{1 Read all numerically prefixed files
+	// {{{2 Read
 	filesList := &FileList{
 		Directory: targetDir,
 	}
@@ -68,6 +69,9 @@ func main() {
 		logger.Fatalf("found no numerically prefixed files")
 	}
 
+	// {{{2 Place spaces in-betwen files
+	filesList.ComputeDeltas()
+	filesList.ComputePrefixes()
 
 	for head := filesList.Head; head != nil; head = head.Next {
 		logger.Debugf("%s", head.FullName(filesList.PrefixLength))
