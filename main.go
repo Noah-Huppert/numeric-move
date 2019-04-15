@@ -1,11 +1,13 @@
 package main
 
 import (
+	"strings"
 	"fmt"
 	"path"
 	"os"
 	"strconv"
 	"path/filepath"
+	"bufio"
 
 	"github.com/Noah-Huppert/golog"
 )
@@ -118,7 +120,26 @@ func main() {
 		}
 	}
 
+	// {{{1 Confirm moves with user
+	logger.Infof("Directory: %s", filesList.Directory)
+	logger.Infof("")
+	logger.Infof("Files to be moved:")
+	logger.Infof("")
+
 	for _, m := range toMove {
-		logger.Debugf("%s -> %s", m[0], m[1])
+		logger.Infof("%s -> %s", m[0], m[1])
+	}
+
+	logger.Infof("")
+	logger.Infof("Proceed? [N/y]")
+	reader := bufio.NewReader(os.Stdin)
+	read, err := reader.ReadString('\n')
+	if err != nil {
+		logger.Fatalf("error reading user input: %s", err.Error())
+	}
+
+	if strings.ToLower(read) != "y" {
+		logger.Fatalf("user did not confirm, exiting...")
+		os.Exit(1)
 	}
 }
