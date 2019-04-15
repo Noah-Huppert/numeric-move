@@ -3,18 +3,43 @@ package main
 import (
 	"testing"
 	"fmt"
+	"strings"
+	"strconv"
 	
 	"github.com/stretchr/testify/assert"
 )
 
-// assertStrArrayEqual compares 2 arrays
+// assertStrArrayEqual asserts that a string array is equal
 func assertStrArrayEqual(t *testing.T, expected []string, actual []string) {
-	// Compare lengths
-	assert.Equalf(t, len(expected), len(actual), "array lengths differ, expected: %#v, actual: %#v", expected, actual)
+	// Check lengths
+	assert.Equal(t, len(expected), len(actual), "array lengths do not match")
 
-	// Compare elements
+	// Check elements
+	notMatchingIndices := []int{}
+
 	for i := 0; i < len(expected); i++ {
-		assert.Equalf(t, expected[i], actual[i], "array element at index %d does not match, expected array: %#v, actual array: %#v", i, expected, actual)
+		if expected[i] != actual[i] {
+			notMatchingIndices = append(notMatchingIndices, i)
+		}
+	}
+
+	if len(notMatchingIndices) > 0 {
+		w := "index"
+		if len(notMatchingIndices) > 1 {
+			w = "indices"
+		}
+
+		iStr := []string{}
+
+		for _, v := range notMatchingIndices {
+			iStr = append(iStr, strconv.FormatInt(int64(v), 10))
+		}
+
+		t.Errorf("values at %s [%s] not equal \n expected: [%s] \n actual  : [%s]\n\n",
+			w,
+			strings.Join(iStr, ", "),
+			strings.Join(expected, ", "),
+			strings.Join(actual, ", "))
 	}
 }
 
@@ -146,8 +171,6 @@ func TestFLInsertSquashNotEq(t *testing.T) {
 		PrevDelta: 0,
 	}, true)
 
-	fmt.Println(list.String())
-
 	assertListEqual(t, []string{"0:_foo.ext:0", "5:_new.ext:4", "10:_bar.ext:4"}, list)
 }
 
@@ -176,8 +199,33 @@ func TestFLInsertSquashEq(t *testing.T) {
 		PrevDelta: 0,
 	}, true)
 
-	fmt.Println(list.String())
-
 	assertListEqual(t, []string{"0:_foo.ext:0", "10:_new.ext:9", "10:_bar.ext:0"}, list)
 }
 
+// TestFLInsertSquashLast ensures FileList.Insert squash == true sets the inserted node's PrevDelta correctly if last node
+func TestFLInsertSquashLast(t *testing.T) {
+	list := &FileList{}
+
+	list.Insert(&FileNode{
+		Name: "_foo.ext",
+		Prefix: 0,
+		PrefixLength: 1,
+		PrevDelta: 0,
+	}, true)
+
+	list.Insert(&FileNode{
+		Name: "_bar.ext",
+		Prefix: 5,
+		PrefixLength: 1,
+		PrevDelta: 4,
+	}, true)
+
+	list.Insert(&FileNode{
+		Name: "_new.ext",
+		Prefix: 10,
+		PrefixLength: 2,
+		PrevDelta: 0,
+	}, true)
+
+	assertListEqual(t, []string{"0:_foo.ext:0", "5:_bar.ext:4", "10:_new.ext:4"}, list)
+}
