@@ -11,13 +11,36 @@ import (
 // The expected argument is a string array representation of the FileList. Each item in the
 // expected array should be in the format: <expected file name>:<expected PrevDelta>
 func assertListEqual(t *testing.T, expected []string, actual *FileList) {
-	actualArray := []string{}
+	// Traverse forwards
+	actualForward := []string{}
 
 	for head := actual.Head; head != nil; head = head.Next {
-		actualArray = append(actualArray, fmt.Sprintf("%s:%d", head.Name, head.PrevDelta))
+		actualForward = append(actualForward, fmt.Sprintf("%s:%d", head.Name, head.PrevDelta))
 	}
 
-	assert.ElementsMatch(t, expected, actualArray)
+	assert.ElementsMatch(t, expected, actualForward)
+
+	// Traverse backwards
+	actualBackwards := []string{}
+	
+	// Get to end of list
+	tail := actual.Head
+
+	for ; tail.Next != nil; tail = tail.Next {}
+
+	// Traverse backwards
+	for ; tail != nil; tail = tail.Prev {
+		actualBackwards = append(actualBackwards, fmt.Sprintf("%s:%d", tail.Name, tail.PrevDelta))
+	}
+
+	// Reverse
+	actualBackwardsForwards := []string{}
+
+	for i := len(actualBackwards) - 1; i >= 0; i-- {
+		actualBackwardsForwards = append(actualBackwardsForwards, actualBackwards[i])
+	}
+
+	assert.ElementsMatch(t, expected, actualBackwardsForwards)
 }
 
 // TestFileListInsertUpdatesMaxPrefixLength ensures FileList.Insert updates the MaxPrefixLength
