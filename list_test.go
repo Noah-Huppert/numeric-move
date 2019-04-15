@@ -9,13 +9,14 @@ import (
 
 // assertListEqual tests that a FileList holds the expected values.
 // The expected argument is a string array representation of the FileList. Each item in the
-// expected array should be in the format: <expected file name>:<expected PrevDelta>
+// expected array should be in the format: <Prefix>:<Name>:<PrevDelta>
 func assertListEqual(t *testing.T, expected []string, actual *FileList) {
 	// Traverse forwards
 	actualForward := []string{}
 
 	for head := actual.Head; head != nil; head = head.Next {
-		actualForward = append(actualForward, fmt.Sprintf("%s:%d", head.Name, head.PrevDelta))
+		actualForward = append(actualForward,
+			fmt.Sprintf("%d:%s:%d", head.Prefix, head.Name, head.PrevDelta))
 	}
 
 	assert.ElementsMatch(t, expected, actualForward)
@@ -30,7 +31,8 @@ func assertListEqual(t *testing.T, expected []string, actual *FileList) {
 
 	// Traverse backwards
 	for ; tail != nil; tail = tail.Prev {
-		actualBackwards = append(actualBackwards, fmt.Sprintf("%s:%d", tail.Name, tail.PrevDelta))
+		actualBackwards = append(actualBackwards,
+			fmt.Sprintf("%d:%s:%d", tail.Prefix, tail.Name, tail.PrevDelta))
 	}
 
 	// Reverse
@@ -77,7 +79,7 @@ func TestFileListInsertEmpty(t *testing.T) {
 		PrevDelta: 9,
 	}, false)
 
-	assertListEqual(t, []string{"_foo.ext:9"}, list)
+	assertListEqual(t, []string{"1:_foo.ext:9"}, list)
 }
 
 // TestFileListInsertOrder ensures FileList.Insert inserts a node in the correct place in a list
@@ -105,5 +107,6 @@ func TestFileListInsertOrder(t *testing.T) {
 		PrevDelta: 7,
 	}, false)
 
-	assertListEqual(t, []string{"_foo.ext:9", "_new.ext:7", "_bar.ext:5"}, list)
+	assertListEqual(t, []string{"1:_foo.ext:9", "2:_new.ext:7", "3:_bar.ext:5"}, list)
 }
+
