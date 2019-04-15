@@ -62,35 +62,39 @@ func (l *FileList) Insert(n *FileNode, squash bool) {
 		    // If the next node has PrevDelta, adjust its PrevDelta based on the inserted
 		    // node's prefix
 		    if n.Next.PrevDelta > 0 {
+			    adjusted := false
+			    
 			    // Adjust the next node's PrevDelta
 			    if n.Next.Prefix != n.Prefix { // If not the same prefix
-				    n.Next.PrevDelta = n.Next.Prefix - n.Prefix
+				    n.Next.PrevDelta = n.Next.Prefix - n.Prefix - 1
+				    adjusted = true
 			    } else { // If same prefix
 				    n.Next.PrevDelta = 0
+				    adjusted = true
 			    }
 
-			    // Adjust the inserted node's PrevDelta based on the previous node's prefix
-			    if n.Prev != nil && n.Prev.Prefix != n.Prefix { // If not the same prefix
-				    n.PrevDelta = n.Prefix - n.Prev.Prefix
-
-				    // Accont for previous node's prefix being 0
-				    if n.Prev.Prefix == uint64(0) {
-					    n.PrevDelta--
-				    }
+			    // Adjust the inserted node's PrevDelta based on the previous
+			    // node's prefix
+			    if n.Prev != nil && n.Prev.Prefix != n.Prefix { 
+				    n.PrevDelta = n.Prefix - n.Prev.Prefix - 1
+				    adjusted = true
 			    } else { // If the same prefix
 				    n.PrevDelta = 0
+				    adjusted = true
 			    }
 
-			    for current = n.Next; current != nil; current = current.Next {
-				    if current.PrevDelta > 0 {
-					    current.PrevDelta--
-					    return
+			    if !adjusted {
+				    for current = n.Next; current != nil; current = current.Next {
+					    if current.PrevDelta > 0 {
+						    current.PrevDelta--
+						    return
+					    }
 				    }
 			    }
 		    }
 		} else { // If last item, ensure PrevDelta is set correctly
 			if n.Prev.Prefix != n.Prefix {
-				n.PrevDelta = n.Prefix - n.Prev.Prefix
+				n.PrevDelta = n.Prefix - n.Prev.Prefix - 1
 			}
 		}
 	}
