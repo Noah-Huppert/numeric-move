@@ -35,8 +35,6 @@ func main() {
 		logger.Fatalf("failed to parse new prefix argument: %s", err.Error())
 	}
 
-	logger.Debugf("%#v, %#v", target, newPrefix)
-
 	// {{{1 Read all numerically prefixed files
 	// {{{2 Read
 	filesList := &FileList{
@@ -56,7 +54,11 @@ func main() {
 			return nil
 		}
 
-		filesList.Insert(node)
+		if node.Name == target.Name {
+			return nil
+		}
+
+		filesList.Insert(node, false)
 
 		return nil
 	})
@@ -71,9 +73,52 @@ func main() {
 
 	// {{{2 Place spaces in-betwen files
 	filesList.ComputeDeltas()
+
+	// {{{2 Make map of files before target insert
+	beforeFiles := filesList.Map()
+
+	// {{{1 Add target in new location
+	// {{{{2 Insert
+	newTarget := &FileNode{
+		Name: target.Name,
+		Prefix: target.Prefix,
+		PrefixLength: target.PrefixLength,
+	}
+	newTarget.SetPrefix(newPrefix)
+	filesList.Insert(newTarget, true)	
+
+	// {{{2 Re-compute prefixes with target inserted
 	filesList.ComputePrefixes()
 
-	for head := filesList.Head; head != nil; head = head.Next {
-		logger.Debugf("%s", head.FullName(filesList.PrefixLength))
+	// {{{1 Determine which files need to be moved
+	// toMove is a list of files to move, values are tuples in format (from, to)
+	toMove := [][]string{}
+
+	for after := filesList.Head; after != nil; after = after.Next {
+		// If file is target
+		if _, inBefore := beforeFiles[after.Name]; !inBefore {
+			newTarget.PrefixLength = filesList.MaxPrefixLength 
+
+			toMove = append(toMove, []string{
+				target.FullName(),
+				newTarget.FullName(),
+			})
+				
+		} else {
+			// If prefix has changed
+			before, _ := beforeFiles[after.Name]
+			after.PrefixLength = filesList.MaxPrefixLength
+
+			if before.Prefix != after.Prefix || before.PrefixLength != after.PrefixLength {
+				toMove = append(toMove, []string{
+					before.FullName(),
+					after.FullName(),
+				})
+			}
+		}
+	}
+
+	for _, m := range toMove {
+		logger.Debugf("%s -> %s", m[0], m[1])
 	}
 }

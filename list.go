@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strconv"
 	"errors"
+	"strings"
 )
 
 // numPrefixExp matches a numerically prefixed file.
@@ -20,6 +21,11 @@ type FileNode struct {
 
 	// Prefix is the file's numeric prefix
 	Prefix uint64
+
+	// PrefixLength is the number of digits used to represent the prefix.
+	// If the Prefix can be represented in less the extra digits are used
+	// by placing 0's before the prefix.
+	PrefixLength uint64
 
 	// PrevDelta is the difference between the previous node's prefix and Prefix.
 	// This field will start un-set. Once all files have been added to a FileList
@@ -57,20 +63,33 @@ func NewFileNode(p string) (*FileNode, error) {
 	return &FileNode{
 		Name: matches[2],
 		Prefix: prefix,
+		PrefixLength: uint64(len(matches[1])),
 		PrevDelta: 0,
 	}, nil
 }
 
-// FullName returns the file's name with its numeric prefix
-func (f FileNode) FullName(length uint64) string {
-	zeros := ""
-	prefixStr := strconv.FormatUint(f.Prefix, 10)
+// String representation
+func (f FileNode) String() string {
+	return fmt.Sprintf("%d %s (dt: %d)", f.Prefix, f.Name, f.PrevDelta)
+}
 
-	for uint64(len(zeros) + len(prefixStr)) < length {
-		zeros += "0"
-	}
+// FullName returns the file's name with its numeric prefix
+func (f FileNode) FullName() string {
+	prefixStr := strconv.FormatUint(f.Prefix, 10)
+	zeros := strings.Repeat("0", int(f.PrefixLength) - len(prefixStr))
 
 	return zeros + prefixStr + f.Name
+}
+
+// SetPrefix sets the Prefix field and updates PrefixLength if it is too small to hold the new prefix
+func (f *FileNode) SetPrefix(p uint64) {
+	requiredLength := uint64(len(strconv.FormatUint(p, 10)))
+
+	if f.PrefixLength < requiredLength {
+		f.PrefixLength = requiredLength
+	}
+
+	f.Prefix = p
 }
 
 // FileList is an ordered doubly linked list of FileNodes.
@@ -79,21 +98,22 @@ type FileList struct {
 	// Directory in which files are located
 	Directory string
 
-	// PrefixLength is the number of digits used to represent FileNode.Prefix fields.
-	// If a number takes less than PrefixLength digits it will be prefixed with 0's.
-	PrefixLength uint64
+	// MaxPrefixLength is the maximum number of digits used to represent
+	// FileNode.Prefix fields.
+	MaxPrefixLength uint64
 
 	// Head of linked list
 	Head *FileNode
 }
 
 // Insert node in ordered position.
-func (l *FileList) Insert(n *FileNode) {
+// If squash is set to true: will attempt to remove one from a FileNode.PrevDelta after the
+// insert location. If no FileNodes with FileNode.PrevDelta > 0 can be found it will do nothing.
+// This argument will only work if ComputeDeltas has been called on the list.
+func (l *FileList) Insert(n *FileNode, squash bool) {
 	// Update PrefixLength if new node's Prefix won't fit
-	requiredLength := uint64(len(strconv.FormatUint(n.Prefix, 10)))
-
-	if l.PrefixLength < requiredLength {
-		l.PrefixLength = requiredLength
+	if l.MaxPrefixLength < n.PrefixLength {
+		l.MaxPrefixLength = n.PrefixLength
 	}
 	
 	// If no nodes in list yet
@@ -122,6 +142,26 @@ func (l *FileList) Insert(n *FileNode) {
 	// Link c and n
 	current.Next = n
 	n.Prev = current
+
+	// Squash
+	if squash {
+		// Check if next node and inserted node have same prefix
+		if current.Next.Next != nil && current.Next.Next.Prefix == n.Prefix {
+			// If this is the case shift the PrevDelta to the newly inserted node
+			n.PrevDelta = current.Next.Next.PrevDelta
+			current.Next.Next.PrevDelta = 0
+		}
+
+		// If not last item in list
+		if n.Next != nil { 
+			for current = n.Next; current != nil; current = current.Next {
+				if current.PrevDelta > 0 {
+					current.PrevDelta--
+					return
+				}
+			}
+		}
+	}
 }
 
 // ComputeDeltas traverses the list and sets the FileNode.PrevDelta field based on the
@@ -131,9 +171,7 @@ func (l *FileList) ComputeDeltas() {
 		// If first node
 		if head.Prev == nil {
 			// PrevDelta is the difference between 0 and Prefix
-			if head.Prefix > 0 {
-				head.PrevDelta = head.Prefix - 1
-			}
+			head.PrevDelta = head.Prefix
 		} else { // If node in middle
 			if head.Prefix - head.Prev.Prefix > 0 {
 			    head.PrevDelta = head.Prefix - head.Prev.Prefix - 1
@@ -153,4 +191,28 @@ func (l *FileList) ComputePrefixes() {
 		head.Prefix = nextPrefix
 		nextPrefix++
 	}
+}
+
+
+// String returns a string representation of the file list
+func (l FileList) String() string {
+	out := []string{}
+	
+	for head := l.Head; head != nil; head = head.Next {
+		out = append(out, head.String())
+	}
+
+	return strings.Join(out, "\n")
+}
+
+// Map creates a map where keys are un-prefixed file names and values are FileNodes
+// Note that the FileNodes returned are not pointers, but values.
+func (l FileList) Map() map[string]FileNode {
+	m := make(map[string]FileNode)
+
+	for head := l.Head; head != nil; head = head.Next {
+		m[head.Name] = *head
+	}
+
+	return m
 }
