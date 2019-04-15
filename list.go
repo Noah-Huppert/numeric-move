@@ -144,27 +144,34 @@ func (l *FileList) Insert(n *FileNode, squash bool) {
 	n.Prev = current
 
 	// Squash
-	if squash && n.Next != nil { // Can't squash if last item in list
-		// If the next node has PrevDelta, adjust its PrevDelta based on the inserted
-		// node's prefix
-		if n.Next.PrevDelta > 0 {
-			if n.Next.Prefix != n.Prefix {
-				n.Next.PrevDelta = n.Next.Prefix - n.Prefix - 1
-			} else {
-				n.Next.PrevDelta = 0
-			}
+	if squash { 
+		// Squash surrounding spaces if not last item
+		if n.Next != nil {
+		    // If the next node has PrevDelta, adjust its PrevDelta based on the inserted
+		    // node's prefix
+		    if n.Next.PrevDelta > 0 {
+			    if n.Next.Prefix != n.Prefix {
+				    n.Next.PrevDelta = n.Next.Prefix - n.Prefix - 1
+			    } else {
+				    n.Next.PrevDelta = 0
+			    }
 
-			if n.Prev != nil && n.Prev.Prefix != n.Prefix {
+			    if n.Prev != nil && n.Prev.Prefix != n.Prefix {
+				    n.PrevDelta = n.Prefix - n.Prev.Prefix - 1
+			    } else {
+				    n.Prev.PrevDelta = 0
+			    }
+
+			    for current = n.Next; current != nil; current = current.Next {
+				    if current.PrevDelta > 0 {
+					    current.PrevDelta--
+					    return
+				    }
+			    }
+		    }
+		} else { // If last item, ensure PrevDelta is set correctly
+			if n.Prev.Prefix != n.Prefix {
 				n.PrevDelta = n.Prefix - n.Prev.Prefix - 1
-			} else {
-				n.Prev.PrevDelta = 0
-			}
-
-			for current = n.Next; current != nil; current = current.Next {
-				if current.PrevDelta > 0 {
-					current.PrevDelta--
-					return
-				}
 			}
 		}
 	}
