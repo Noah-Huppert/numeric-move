@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"path/filepath"
 	"bufio"
+	"flag"
 
 	"github.com/Noah-Huppert/golog"
 )
@@ -16,27 +17,41 @@ func main() {
 	// {{{1 Setup logger
 	logger := golog.NewStdLogger("nmv")
 
+	// {{{1 Get flags
+	var noConfirm bool
+	flag.BoolVar(&noConfirm, "y", false, "")
+	flag.Parse()
+
+	args := os.Args[1:]
+
+	if noConfirm {
+		args = args[1:]
+	}
+
 	// {{{1 Get arguments
-	if len(os.Args[1:]) != 2 {
+	if len(args) != 2 {
 		fmt.Printf("%s - Numeric move\n\n", os.Args[0])
-		fmt.Printf("Usage: %s TARGET NEW_PREFIX\n\n", os.Args[0])
+		fmt.Printf("Usage: %s [-y] TARGET NEW_PREFIX\n\n", os.Args[0])
+		fmt.Println("Options:")
+		fmt.Println("    -y    Do not ask for confirmation\n")
 		fmt.Println("Arguments:")
 		fmt.Println("    TARGET        Path of file to move")
 		fmt.Println("    NEW_PREFIX    New numerical prefix")
+		os.Exit(1)
 	}
 
-	targetDir := path.Dir(os.Args[1])
-	target, err := NewFileNode(path.Base(os.Args[1]))
+	targetDir := path.Dir(args[0])
+	target, err := NewFileNode(path.Base(args[0]))
 
 	if err != nil {
-		logger.Fatalf("failed to parse target argument: %s", err.Error())
+		logger.Fatalf("failed to parse target argument \"%s\": %s", args[0], err.Error())
 	}
 
-	newPrefix, err := strconv.ParseUint(os.Args[2], 10, 64)
+	newPrefix, err := strconv.ParseUint(args[1], 10, 64)
 	if err != nil {
-		logger.Fatalf("failed to parse new prefix argument: %s", err.Error())
+		logger.Fatalf("failed to parse new prefix argument \"%s\": %s", args[1], err.Error())
 	}
-
+	
 	// {{{1 Read all numerically prefixed files
 	// {{{2 Read
 	filesList := &FileList{
@@ -121,25 +136,27 @@ func main() {
 	}
 
 	// {{{1 Confirm moves with user
-	logger.Infof("Directory: %s", filesList.Directory)
-	logger.Infof("")
-	logger.Infof("Files to be moved:")
-	logger.Infof("")
+	if !noConfirm {
+		logger.Infof("Directory: %s", filesList.Directory)
+		logger.Infof("")
+		logger.Infof("Files to be moved:")
+		logger.Infof("")
 
-	for _, m := range toMove {
-		logger.Infof("%s -> %s", m[0], m[1])
-	}
+		for _, m := range toMove {
+			logger.Infof("%s -> %s", m[0], m[1])
+		}
 
-	logger.Infof("")
-	logger.Infof("Proceed? [N/y]")
-	reader := bufio.NewReader(os.Stdin)
-	read, err := reader.ReadString('\n')
-	if err != nil {
-		logger.Fatalf("error reading user input: %s", err.Error())
-	}
+		logger.Infof("")
+		logger.Infof("Proceed? [N/y]")
+		reader := bufio.NewReader(os.Stdin)
+		read, err := reader.ReadString('\n')
+		if err != nil {
+			logger.Fatalf("error reading user input: %s", err.Error())
+		}
 
-	if strings.ToLower(read) != "y" {
-		logger.Fatalf("user did not confirm, exiting...")
-		os.Exit(1)
+		if strings.ToLower(read) != "y" {
+			logger.Fatalf("user did not confirm, exiting...")
+			os.Exit(1)
+		}
 	}
 }
