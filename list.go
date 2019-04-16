@@ -70,7 +70,6 @@ func (l *FileList) Insert(n *FileNode, squash bool) {
 				    adjusted = true
 			    } else { // If same prefix
 				    n.Next.PrevDelta = 0
-				    adjusted = true
 			    }
 
 			    // Adjust the inserted node's PrevDelta based on the previous
@@ -80,7 +79,6 @@ func (l *FileList) Insert(n *FileNode, squash bool) {
 				    adjusted = true
 			    } else { // If the same prefix
 				    n.PrevDelta = 0
-				    adjusted = true
 			    }
 
 			    if !adjusted {

@@ -155,14 +155,14 @@ func TestFLInsertSquashNotEq(t *testing.T) {
 		Prefix: 0,
 		PrefixLength: 1,
 		PrevDelta: 0,
-	}, true)
+	}, false)
 
 	list.Insert(&FileNode{
 		Name: "_bar.ext",
 		Prefix: 10,
 		PrefixLength: 2,
 		PrevDelta: 9,
-	}, true)
+	}, false)
 
 	list.Insert(&FileNode{
 		Name: "_new.ext",
@@ -183,14 +183,14 @@ func TestFLInsertSquashEq(t *testing.T) {
 		Prefix: 0,
 		PrefixLength: 1,
 		PrevDelta: 0,
-	}, true)
+	}, false)
 
 	list.Insert(&FileNode{
 		Name: "_bar.ext",
 		Prefix: 10,
 		PrefixLength: 2,
 		PrevDelta: 9,
-	}, true)
+	}, false)
 
 	list.Insert(&FileNode{
 		Name: "_new.ext",
@@ -211,14 +211,14 @@ func TestFLInsertSquashLast(t *testing.T) {
 		Prefix: 0,
 		PrefixLength: 1,
 		PrevDelta: 0,
-	}, true)
+	}, false)
 
 	list.Insert(&FileNode{
 		Name: "_bar.ext",
 		Prefix: 5,
 		PrefixLength: 1,
 		PrevDelta: 4,
-	}, true)
+	}, false)
 
 	list.Insert(&FileNode{
 		Name: "_new.ext",
@@ -228,4 +228,44 @@ func TestFLInsertSquashLast(t *testing.T) {
 	}, true)
 
 	assertListEqual(t, []string{"0:_foo.ext:0", "5:_bar.ext:4", "10:_new.ext:4"}, list)
+}
+
+// TestFLInsertSquashFirst ensures FileList.Insert squash == true sets the inserted node's PrevDelta correctly if first node
+func TestFLInsertSquashFirst(t *testing.T) {
+	list := &FileList{}
+
+	list.Insert(&FileNode{
+		Name: "_foo.ext",
+		Prefix: 0,
+		PrefixLength: 1,
+		PrevDelta: 0,
+	}, false)
+
+	list.Insert(&FileNode{
+		Name: "_bar.ext",
+		Prefix: 5,
+		PrefixLength: 1,
+		PrevDelta: 4,
+	}, false)
+
+	list.Insert(&FileNode{
+		Name: "_bazz.ext",
+		Prefix: 10,
+		PrefixLength: 2,
+		PrevDelta: 4,
+	}, false)
+
+
+	list.Insert(&FileNode{
+		Name: "_new.ext",
+		Prefix: 0,
+		PrefixLength: 1,
+		PrevDelta: 0,
+	}, true)
+
+	assertListEqual(t, []string{
+		"0:_foo.ext:0",
+		"0:_new.ext:0",
+		"5:_bar.ext:4",
+	        "10:_bazz.ext:4"}, list)
 }
